@@ -318,6 +318,7 @@ velocidad y eficiencia en el desarrollo de aplicaciones.
 
 <p>
 Autor: Edgar Eduardo Lopez Orozco<br>
+Autor: Keyna vianney Villa Vera<br>
 Materia: Computación en la Nube (361)<br>
 Institución: Universidad Autónoma de Baja California
 </p>
