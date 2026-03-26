@@ -1,217 +1,190 @@
-# 🗄️ Automatización de Respaldo de Base de Datos MySQL
-### Ubuntu WSL + Docker + MySQL + Cron
- 
+# 🐳 Actividad Docker-MYSQLDUMP
+## Automatizar el proceso de creación de backups de bases de datos
+
 ---
- 
+
 ## 📋 Requisitos previos
 - Windows con Ubuntu (WSL) instalado
 - Docker Desktop instalado y abierto
 - DBeaver instalado
 - MySQL corriendo en un contenedor Docker llamado `sql`
- 
+
 ---
- 
+
 ## 🐳 Paso 0 — Iniciar el contenedor Docker con MySQL
- 
-Antes de realizar cualquier respaldo, el contenedor Docker debe estar corriendo.
- 
-### Opción A — Desde Docker Desktop (interfaz gráfica):
-1. Abrir **Docker Desktop** en Windows
-2. Ir a la sección **Containers**
-3. Localizar el contenedor llamado **`sql`** (imagen: `ubuntu/mysql:latest`, puerto: `3306:3306`)
-4. Hacer clic en el botón **▶ (Play)** para iniciarlo
-5. Esperar a que el STATUS cambie a **Running**
- 
-### Opción B — Desde la terminal de Ubuntu (WSL):
+
+Desde la terminal de Ubuntu (WSL):
 ```bash
 docker start sql
 ```
- 
-Verificar que el contenedor está corriendo:
+
+Verificar que está corriendo:
 ```bash
 docker ps
 ```
 Debe aparecer el contenedor `sql` con STATUS `Up` y puerto `3306:3306`.
- 
-> ⚠️ Docker Desktop debe estar abierto en Windows para que los comandos `docker` funcionen desde la terminal de Ubuntu (WSL).
- 
+
+> ⚠️ Docker Desktop debe estar abierto en Windows para que los comandos `docker` funcionen desde Ubuntu WSL.
+
 ---
- 
+
 ## ✅ Paso 1 — Verificar que el servicio Cron esté activo
- 
-Antes de configurar cualquier tarea automática, asegurarse de que el servicio cron esté corriendo en Ubuntu WSL.
- 
-### Verificar el estado:
+
 ```bash
 systemctl status cron
 ```
- 
+
 Si muestra `inactive (dead)`, iniciarlo con:
 ```bash
 sudo systemctl start cron
 ```
- 
-Confirmar que está activo:
-```bash
-systemctl status cron
-```
-Debe mostrar **`active (running)`** en verde.
- 
+
 ---
- 
+
 ## 🔍 Paso 2 — Verificar la ubicación de mysqldump
- 
-El crontab necesita la ruta completa del ejecutable `mysqldump`.
- 
+
 ```bash
 which mysqldump
 ```
- 
-### Resultado esperado:
+Resultado esperado:
 ```
 /usr/bin/mysqldump
 ```
- 
+
 ---
- 
-## 🧪 Paso 3 — Ir a la carpeta de respaldos y probar manualmente
- 
-Navegar a la carpeta donde se guardarán los respaldos:
+
+## 💾 1. mysqldump automático
+
+### Ir a la carpeta de respaldos:
 ```bash
 cd /mnt/c/Users/Edgar/Documents/servidor/
 ```
- 
-Hacer el respaldo de prueba:
-```bash
-mysqldump -h 127.0.0.1 -u TU_USUARIO -pTU_CONTRASEÑA servidor > respaldo.sql
-```
- 
-Verificar que se creó:
+
+### Ver los archivos generados:
 ```bash
 ls
 ```
- 
-Verificar que tiene contenido:
+
+### Ver archivos con ruta completa:
 ```bash
-ls -lh
+ls /mnt/c/Users/Edgar/Documents/servidor/
 ```
-Debe mostrar un tamaño mayor a **0 bytes**.
- 
-Abrir el archivo para confirmar:
-```bash
-vim respaldo.sql
-```
-Para salir de vim: presiona `Esc` luego escribe `:q` y `Enter`
- 
----
- 
-## ⚙️ Paso 4 — Configurar el crontab para automatizar el respaldo
- 
-### Abrir el editor de crontab:
+
+### Configurar el crontab:
 ```bash
 crontab -e
 ```
- 
-Agregar esta línea al final del archivo **sin `#` al inicio**:
- 
+
+Agregar esta línea **sin `#` al inicio**:
 ```bash
-* * * * * /usr/bin/mysqldump -h 127.0.0.1 -u TU_USUARIO -pTU_CONTRASEÑA servidor > /mnt/c/Users/Edgar/Documents/servidor/respaldo_$(date +\%F_\%H-\%M).sql
+* * * * * /usr/bin/mysqldump -h 127.0.0.1 -u TU_USUARIO -pTU_CONTRASEÑA servidor > /mnt/c/Users/Edgar/Documents/servidor/respaldo_$(date +\%F_\%H-\%M).sql && ls /mnt/c/Users/Edgar/Documents/servidor/
 ```
- 
-### Guardar y salir de nano:
-- `Ctrl + O` → `Enter` (guardar)
-- `Ctrl + X` (cerrar)
- 
----
- 
-## 📋 Paso 5 — Verificar que el crontab se guardó
- 
+
+> 💡 El `&& ls` al final muestra en la terminal los archivos cada vez que se genera un nuevo respaldo.
+
+Verificar que se guardó:
 ```bash
 crontab -l
 ```
- 
-Debe aparecer la línea de `mysqldump` configurada.
- 
+
+### Resultado esperado:
+Cada minuto aparece un archivo nuevo:
+```
+respaldo_2026-03-25_19-39.sql
+respaldo_2026-03-25_19-40.sql
+respaldo_2026-03-25_19-41.sql
+respaldo_2026-03-25_19-42.sql
+respaldo_2026-03-25_19-43.sql
+```
+
 ---
- 
-## 👀 Paso 6 — Ver los respaldos desde la terminal de Ubuntu
- 
-### Ver todos los archivos `.sql` de la carpeta:
-```bash
-ls *.sql
+
+## 📅 2. En fechas exactas
+
+Los campos del crontab controlan cuándo se ejecuta el respaldo:
+
 ```
- 
-### Ver con tamaño y fecha:
-```bash
-ls -lh
+* * * * * comando
+│ │ │ │ │
+│ │ │ │ └── Día de la semana (0=domingo, 6=sábado)
+│ │ │ └──── Mes (1-12)
+│ │ └────── Día del mes (1-31)
+│ └──────── Hora (0-23)
+└────────── Minuto (0-59)
 ```
- 
-### Ver en tiempo real cada segundo si aparece uno nuevo:
-```bash
-watch -n 1 ls -lh /mnt/c/Users/Edgar/Documents/servidor/*.sql
-```
-Para salir presiona `Ctrl + C`
- 
----
- 
-## 📁 Resultado esperado
- 
-Cada minuto aparece un archivo nuevo en la carpeta:
- 
-```
-respaldo_2026-03-25_12-28.sql
-respaldo_2026-03-25_12-29.sql
-respaldo_2026-03-25_12-30.sql
-```
- 
-Cada archivo contiene:
-- ✅ La estructura completa de la base de datos `servidor`
-- ✅ Las tablas: `denue` y `estudiantes`
-- ✅ Todos los datos registrados
- 
----
- 
-## 🕐 Cambiar frecuencia del respaldo (opcional)
- 
-Una vez confirmado que funciona, cambiar a una vez por día a las **11:00 PM**:
- 
+
+### Ejemplos:
+
+**Todos los días a las 11:00 PM:**
 ```bash
 0 23 * * * /usr/bin/mysqldump -h 127.0.0.1 -u TU_USUARIO -pTU_CONTRASEÑA servidor > /mnt/c/Users/Edgar/Documents/servidor/respaldo_$(date +\%F_\%H-\%M).sql
 ```
- 
+
+**Cada lunes a las 8:00 AM:**
+```bash
+0 8 * * 1 /usr/bin/mysqldump -h 127.0.0.1 -u TU_USUARIO -pTU_CONTRASEÑA servidor > /mnt/c/Users/Edgar/Documents/servidor/respaldo_$(date +\%F_\%H-\%M).sql
+```
+
+**El día 1 de cada mes a medianoche:**
+```bash
+0 0 1 * * /usr/bin/mysqldump -h 127.0.0.1 -u TU_USUARIO -pTU_CONTRASEÑA servidor > /mnt/c/Users/Edgar/Documents/servidor/respaldo_$(date +\%F_\%H-\%M).sql
+```
+
 ---
- 
+
+## 🗑️ 3. Respaldos limitados
+
+Para conservar solo los **últimos 5 respaldos** y eliminar los más antiguos automáticamente:
+
+```bash
+crontab -e
+```
+
+Agregar esta línea:
+```bash
+* * * * * /usr/bin/mysqldump -h 127.0.0.1 -u TU_USUARIO -pTU_CONTRASEÑA servidor > /mnt/c/Users/Edgar/Documents/servidor/respaldo_$(date +\%F_\%H-\%M).sql && ls -t /mnt/c/Users/Edgar/Documents/servidor/respaldo_*.sql | tail -n +6 | xargs rm -f
+```
+
+### ¿Cómo funciona?
+| Parte del comando | Descripción |
+|---|---|
+| `mysqldump ... > respaldo_fecha.sql` | Crea el nuevo respaldo |
+| `&&` | Solo continúa si el respaldo fue exitoso |
+| `ls -t ... respaldo_*.sql` | Lista los respaldos del más nuevo al más antiguo |
+| `tail -n +6` | Selecciona todos excepto los 5 más recientes |
+| `xargs rm -f` | Elimina los seleccionados |
+
+> 💡 Cambia el `6` por `(N+1)` donde N es cuántos respaldos quieres conservar. Ejemplo: para guardar los últimos **10** usa `tail -n +11`.
+
+---
+
 ## 📌 Resumen de comandos
- 
+
 ```bash
 # 1. Iniciar contenedor Docker
 docker start sql
- 
+
 # 2. Verificar e iniciar cron
 systemctl status cron
 sudo systemctl start cron
- 
+
 # 3. Obtener ruta de mysqldump
 which mysqldump
- 
+
 # 4. Ir a la carpeta de respaldos
 cd /mnt/c/Users/Edgar/Documents/servidor/
- 
-# 5. Probar respaldo manualmente
-mysqldump -h 127.0.0.1 -u TU_USUARIO -pTU_CONTRASEÑA servidor > respaldo.sql
- 
-# 6. Ver archivos creados
-ls *.sql
- 
-# 7. Ver archivos con tamaño y fecha
-ls -lh
- 
-# 8. Editar crontab
+
+# 5. Ver archivos generados
+ls
+ls /mnt/c/Users/Edgar/Documents/servidor/
+
+# 6. Editar crontab
 crontab -e
- 
-# 9. Ver tareas configuradas
+
+# 7. Ver tareas configuradas
 crontab -l
- 
-# 10. Ver respaldos en tiempo real
-watch -n 1 ls -lh /mnt/c/Users/Edgar/Documents/servidor/*.sql
 ```
+
+---
+
+*Documentación generada el 25 de marzo de 2026*
