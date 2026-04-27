@@ -2,7 +2,7 @@
 
 **Materia:** Inteligencia de Negocios  
 **Herramienta:** Google Apps Script  
-**Dataset:** DENUE INEGI (`denue_inegi_11___1_.xlsx`)
+**Dataset:** DENUE INEGI (`denue_inegi.xlsx`)
 
 ---
 
