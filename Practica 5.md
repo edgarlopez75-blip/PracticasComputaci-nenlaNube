@@ -1,9 +1,9 @@
-# 🐳 Actividad Docker-MYSQLDUMP
+# Actividad Docker-MYSQLDUMP
 ## Automatizar el proceso de creación de backups de bases de datos
 
 ---
 
-## 📋 Requisitos previos
+## Requisitos previos
 - Windows con Ubuntu (WSL) instalado
 - Docker Desktop instalado y abierto
 - DBeaver instalado
@@ -11,7 +11,7 @@
 
 ---
 
-## 🐳 Paso 0 — Iniciar el contenedor Docker con MySQL
+## Paso 0 — Iniciar el contenedor Docker con MySQL
 
 Desde la terminal de Ubuntu (WSL):
 ```bash
@@ -24,11 +24,11 @@ docker ps
 ```
 Debe aparecer el contenedor `sql` con STATUS `Up` y puerto `3306:3306`.
 
-> ⚠️ Docker Desktop debe estar abierto en Windows para que los comandos `docker` funcionen desde Ubuntu WSL.
+> Docker Desktop debe estar abierto en Windows para que los comandos `docker` funcionen desde Ubuntu WSL.
 
 ---
 
-## ✅ Paso 1 — Verificar que el servicio Cron esté activo
+## Paso 1 — Verificar que el servicio Cron esté activo
 
 ```bash
 systemctl status cron
@@ -41,7 +41,7 @@ sudo systemctl start cron
 
 ---
 
-## 🔍 Paso 2 — Verificar la ubicación de mysqldump
+## Paso 2 — Verificar la ubicación de mysqldump
 
 ```bash
 which mysqldump
@@ -53,7 +53,7 @@ Resultado esperado:
 
 ---
 
-## 💾 1. mysqldump automático
+## 1. mysqldump automático
 
 ### Ir a la carpeta de respaldos:
 ```bash
@@ -80,7 +80,7 @@ Agregar esta línea **sin `#` al inicio**:
 * * * * * /usr/bin/mysqldump -h 127.0.0.1 -u TU_USUARIO -pTU_CONTRASEÑA servidor > /mnt/c/Users/Edgar/Documents/servidor/respaldo_$(date +\%F_\%H-\%M).sql && ls /mnt/c/Users/Edgar/Documents/servidor/
 ```
 
-> 💡 El `&& ls` al final muestra en la terminal los archivos cada vez que se genera un nuevo respaldo.
+> El `&& ls` al final muestra en la terminal los archivos cada vez que se genera un nuevo respaldo.
 
 Verificar que se guardó:
 ```bash
@@ -99,7 +99,7 @@ respaldo_2026-03-25_19-43.sql
 
 ---
 
-## 📅 2. En fechas exactas
+##  2. En fechas exactas
 
 Los campos del crontab controlan cuándo se ejecuta el respaldo:
 
@@ -132,7 +132,7 @@ Los campos del crontab controlan cuándo se ejecuta el respaldo:
 
 ---
 
-## 🗑️ 3. Respaldos limitados
+## 3. Respaldos limitados
 
 Para conservar solo los **últimos 5 respaldos** y eliminar los más antiguos automáticamente:
 
@@ -154,11 +154,11 @@ Agregar esta línea:
 | `tail -n +6` | Selecciona todos excepto los 5 más recientes |
 | `xargs rm -f` | Elimina los seleccionados |
 
-> 💡 Cambia el `6` por `(N+1)` donde N es cuántos respaldos quieres conservar. Ejemplo: para guardar los últimos **10** usa `tail -n +11`.
+> Cambia el `6` por `(N+1)` donde N es cuántos respaldos quieres conservar. Ejemplo: para guardar los últimos **10** usa `tail -n +11`.
 
 ---
 
-## 📌 Resumen de comandos
+## Resumen de comandos
 
 ```bash
 # 1. Iniciar contenedor Docker
