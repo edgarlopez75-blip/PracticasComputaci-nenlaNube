@@ -186,6 +186,7 @@ crontab -l
 ```
 
 ---
+Autor: Edgar Eduardo Lopez Orozco<br>
 Autor: Keyna vianney Villa Vera<br>
 Materia: (Computación en la Nube(361)<br>
 Institución: (Universidad Autonoma de Baja California )</p>
